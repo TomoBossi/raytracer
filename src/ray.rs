@@ -6,18 +6,10 @@ pub struct Ray {
 }
 
 impl Ray {
-    pub fn new(origin: Vec3, direction: Vec3) -> Ray {
-        Ray {
-            ori: origin,
-            dir: direction
-        }
-    }
-
     pub fn at(self, t: f32) -> Vec3 {
         self.ori + t*self.dir
     }
 }
-
 
 impl std::clone::Clone for Ray { // r.clone();
     fn clone(&self) -> Self {
@@ -27,6 +19,5 @@ impl std::clone::Clone for Ray { // r.clone();
         }
     }
 }
-
 
 impl std::marker::Copy for Ray {}

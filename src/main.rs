@@ -5,10 +5,14 @@
 pub mod vec3;
 pub mod ray;
 pub mod color;
+pub mod surface;
+pub mod sphere;
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::color::write_color;
+use crate::surface::{HitRecord, Hittable};
+use crate::sphere::Sphere;
 
 fn main() {
     let aspect_ratio: f32 = 16.0/9.0;                                           // Aspect ratio
@@ -29,45 +33,35 @@ fn main() {
     let mut px_color: Vec3;
     let mut ray_dir: Vec3;
     let mut r: Ray;
+
+    let mut rec: HitRecord = HitRecord::new_empty();
+    let surfaces = [
+        Sphere{center: Vec3(0., 0., -0.8), radius: 0.5},
+        Sphere{center: Vec3(0.5, 0., -1.), radius: 0.5},
+    ];
+
     println!("P3\n{} {}\n255", w, h);
     for j in 0..h {
         for i in 0..w {
             px_center = px00_loc + (i as f32)*du + (j as f32)*dv;
             ray_dir = px_center - cam_center;
             r = Ray{ori: cam_center, dir: ray_dir};
-            px_color = ray_color(r);
+            px_color = ray_color(r, &mut rec, &surfaces);
             write_color(px_color);
         }
     }
 }
 
-
-fn ray_color(r: Ray) -> Vec3 {
-    let t: f32 = sphere_hit(Vec3(0., 0., -1.), 0.5, r);
-    if (t > 0.) {
-        let n: Vec3 = (r.at(t) - Vec3(0., 0., -1.)).unit();
-        return (1. + n)/2.;
+fn ray_color<T: Hittable>(r: Ray, rec: &mut HitRecord, surfaces: &[T]) -> Vec3 {
+    for surf in surfaces.iter() {
+        if (surf.hit(r, 0., 50., rec)) {
+            return (1. + rec.n)/2.;
+        }
     }
-
     let unit_dir: Vec3 = r.dir.unit();
     let a: f32 = 0.5*(unit_dir.1 + 1.0);
     (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
 }
-
-
-fn sphere_hit(s_center: Vec3, radius: f32, r: Ray) -> f32 {
-    let oc: Vec3 = r.ori - s_center;
-    let a: f32 = r.dir*r.dir;
-    let b: f32 = 2.0*oc*r.dir;
-    let c: f32 = oc*oc - radius*radius;
-    let discriminant: f32 = b*b - 4.*a*c;
-    if (discriminant < 0.) {
-        -1.0
-    } else {
-        (-b - discriminant.sqrt())/(2.0*a)                                      // Value of t for the nearest sphere hit 
-    }
-}
-
 
 fn output_an_image(w: u16, h: u16) {
     let mut rgb: Vec3;
