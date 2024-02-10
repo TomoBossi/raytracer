@@ -43,8 +43,10 @@ fn main() {
 
 
 fn ray_color(r: Ray) -> Vec3 {
-    if (sphere(Vec3(0., 0., -1.), 0.5, r)) {
-        return Vec3(1., 0., 0.);
+    let t: f32 = sphere_hit(Vec3(0., 0., -1.), 0.5, r);
+    if (t > 0.) {
+        let n: Vec3 = (r.at(t) - Vec3(0., 0., -1.)).unit();
+        return (1. + n)/2.;
     }
 
     let unit_dir: Vec3 = r.dir.unit();
@@ -53,13 +55,17 @@ fn ray_color(r: Ray) -> Vec3 {
 }
 
 
-fn sphere(s_center: Vec3, radius: f32, r: Ray) -> bool {
+fn sphere_hit(s_center: Vec3, radius: f32, r: Ray) -> f32 {
     let oc: Vec3 = r.ori - s_center;
     let a: f32 = r.dir*r.dir;
     let b: f32 = 2.0*oc*r.dir;
     let c: f32 = oc*oc - radius*radius;
     let discriminant: f32 = b*b - 4.*a*c;
-    discriminant >= 0.
+    if (discriminant < 0.) {
+        -1.0
+    } else {
+        (-b - discriminant.sqrt())/(2.0*a)                                      // Value of t for the nearest sphere hit 
+    }
 }
 
 

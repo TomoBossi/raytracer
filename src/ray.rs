@@ -6,14 +6,14 @@ pub struct Ray {
 }
 
 impl Ray {
-    fn new(ori: Vec3, dir: Vec3) -> Ray {
+    pub fn new(origin: Vec3, direction: Vec3) -> Ray {
         Ray {
-            ori: ori,
-            dir: dir
+            ori: origin,
+            dir: direction
         }
     }
 
-    fn at(self, t: f32) -> Vec3 {
+    pub fn at(self, t: f32) -> Vec3 {
         self.ori + t*self.dir
     }
 }
