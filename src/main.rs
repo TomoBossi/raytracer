@@ -14,6 +14,17 @@ use crate::color::write_color;
 use crate::surface::{HitRecord, Hittable};
 use crate::sphere::Sphere;
 
+enum Surfaces {
+    Sphere(Sphere)
+}
+impl Hittable for Surfaces {
+    fn hit(&self, r: Ray, r_tmin: f32, r_tmax: f32, rec: &mut HitRecord) -> bool {
+        match self {
+            Surfaces::Sphere(sphere) => sphere.hit(r, r_tmin, r_tmax, rec)
+        }
+    }
+}
+
 fn main() {
     let aspect_ratio: f32 = 16.0/9.0;                                           // Aspect ratio
     let w: u16 = 400;                                                           // Screen width
@@ -35,10 +46,10 @@ fn main() {
     let mut r: Ray;
 
     let mut rec: HitRecord = HitRecord::new_empty();
-    let surfaces = [
-        Sphere{center: Vec3(0.12, 0., -0.37), radius: 0.1},
-        Sphere{center: Vec3(0., 0., -0.8), radius: 0.5},
-        Sphere{center: Vec3(0.1, 0., -0.475), radius: 0.2},
+    let mut surfaces: Vec<Surfaces> = vec![
+        Surfaces::Sphere(Sphere{center: Vec3(0.12, 0., -0.37), radius: 0.1}),
+        Surfaces::Sphere(Sphere{center: Vec3(0., 0., -0.8), radius: 0.5}),
+        Surfaces::Sphere(Sphere{center: Vec3(0.1, 0., -0.475), radius: 0.2})
     ];
 
     println!("P3\n{} {}\n255", w, h);
@@ -53,7 +64,7 @@ fn main() {
     }
 }
 
-fn ray_color<T: Hittable>(r: Ray, rec: &mut HitRecord, surfaces: &[T]) -> Vec3 {
+fn ray_color(r: Ray, rec: &mut HitRecord, surfaces: &Vec<Surfaces>) -> Vec3 {
     let mut nearest_hit_rec: HitRecord = HitRecord::new_empty();
     let mut surface_hit: bool = false;
     for surf in surfaces.iter() {
