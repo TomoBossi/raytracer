@@ -24,9 +24,9 @@ impl Hittable for World {
     fn hit(&self, r: Ray, t_range: Interval, rec: &mut HitRecord) -> bool {
         let mut temp_rec: HitRecord = HitRecord::new_empty();
         let mut world_hit: bool = false;
-        let mut nearest: f32 = t_range.max;
+        let mut nearest: f64 = t_range.max;
         for surface in self.surfaces.iter() {
-            if (surface.hit(r, Interval{min: 0., max: nearest}, &mut temp_rec)) {
+            if (surface.hit(r, Interval{min: t_range.min, max: nearest}, &mut temp_rec)) {
                 nearest = temp_rec.t;
                 world_hit = true;
                 *rec = temp_rec;

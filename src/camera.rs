@@ -6,12 +6,13 @@ use crate::interval::Interval;
 use crate::world::World;
 
 pub struct Camera {
-    ar: f32,                                                                    // Aspect ratio
-    f: f32,                                                                     // Focal length
+    max_d: u8,                                                                  // Max depth (n° of jumps)
+    ar: f64,                                                                    // Aspect ratio
+    f: f64,                                                                     // Focal length
     w: u16,                                                                     // Screen viewport_width
     h: u16,                                                                     // Screen height
-    vh: f32,                                                                    // Viewport viewport_width
-    vw: f32,                                                                    // Viewport height
+    vh: f64,                                                                    // Viewport viewport_width
+    vw: f64,                                                                    // Viewport height
     vu: Vec3,                                                                   // V_u
     vv: Vec3,                                                                   // V_v
     du: Vec3,                                                                   // delta_u between pixels
@@ -26,23 +27,24 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(aspect_ratio: f32, viewport_width: u16, focal_length: f32, aa_factor: u8) -> Camera {
-        let h: u16 = (viewport_width as f32/aspect_ratio) as u16;
-        let vh: f32 = 2.0;
-        let vw: f32 = vh*(viewport_width as f32/h as f32);
-        let vu: Vec3 = Vec3(vw as f32, 0., 0.);
-        let vv: Vec3 = Vec3(0., -vh as f32, 0.);
-        let du: Vec3 = vu/(viewport_width as f32);
-        let dv: Vec3 = vv/(h as f32);
+    pub fn new(aspect_ratio: f64, viewport_width: u16, max_depth: u8, focal_length: f64, aa_factor: u8) -> Camera {
+        let h: u16 = (viewport_width as f64/aspect_ratio) as u16;
+        let vh: f64 = 2.0;
+        let vw: f64 = vh*(viewport_width as f64/h as f64);
+        let vu: Vec3 = Vec3(vw as f64, 0., 0.);
+        let vv: Vec3 = Vec3(0., -vh as f64, 0.);
+        let du: Vec3 = vu/(viewport_width as f64);
+        let dv: Vec3 = vv/(h as f64);
         let c_center: Vec3 = Vec3(0., 0., 0.);
         let v_corner: Vec3 = c_center - Vec3(0., 0., focal_length) - vu/2. - vv/2.;
-        let aa_sqrt: u8 = (aa_factor as f32).sqrt() as u8;
+        let aa_sqrt: u8 = (aa_factor as f64).sqrt() as u8;
         let aa: u8 = aa_sqrt*aa_sqrt;
-        let dus: Vec3 = du/(aa_sqrt + 1) as f32;
-        let dvs: Vec3 = dv/(aa_sqrt + 1) as f32;
+        let dus: Vec3 = du/(aa_sqrt + 1) as f64;
+        let dvs: Vec3 = dv/(aa_sqrt + 1) as f64;
         let s_corner: Vec3 = v_corner + dus + dvs;
         
         Camera {
+            max_d: max_depth,
             ar: aspect_ratio,
             f: focal_length,
             w: viewport_width,
@@ -74,24 +76,29 @@ impl Camera {
 
     fn get_px_color(&self, world: &World, i: u16, j: u16) -> Vec3 {
         let mut px_color: Vec3 = Vec3(0., 0., 0.);
-        let start: Vec3 = self.s_corner + (i as f32)*self.du + (j as f32)*self.dv;
+        let start: Vec3 = self.s_corner + (i as f64)*self.du + (j as f64)*self.dv;
         for pi in 0..self.aa_sqrt {
             for pj in 0..self.aa_sqrt {
-                let pos: Vec3 = start + (pi as f32)*self.dus + (pj as f32)*self.dvs;
+                let pos: Vec3 = start + (pi as f64)*self.dus + (pj as f64)*self.dvs;
                 let r: Ray = Ray {ori: self.c_center, dir: pos - self.c_center};
-                px_color += Self::ray_color(r, &world)/self.aa as f32;
+                px_color += Self::ray_color(r, self.max_d, &world)/self.aa as f64;
             }
         }
         px_color
     }
 
-    fn ray_color(r: Ray, world: &World) -> Vec3 {
+    fn ray_color(r: Ray, depth: u8, world: &World) -> Vec3 {
+        if (depth <= 0) {
+            return Vec3(0. ,0., 0.);
+        }
+
         let mut rec: HitRecord = HitRecord::new_empty();
-        if (world.hit(r, Interval{min: 0., max: f32::INFINITY}, &mut rec)) {
-            (1. + rec.n)/2.
+        if (world.hit(r, Interval{min: 0.000001, max: f64::INFINITY}, &mut rec)) {
+            let dir: Vec3 = rec.n + Vec3::random_unit();
+            0.5*Self::ray_color(Ray {ori: rec.p, dir: dir}, depth-1, world)
         } else {
             let unit_dir: Vec3 = r.dir.unit();
-            let a: f32 = 0.5*(unit_dir.1 + 1.0);
+            let a: f64 = 0.5*(unit_dir.1 + 1.0);
             (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
         }
     }

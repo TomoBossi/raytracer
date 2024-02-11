@@ -5,7 +5,7 @@ use crate::interval::Interval;
 pub struct HitRecord {
     pub p: Vec3,
     pub n: Vec3,
-    pub t: f32,
+    pub t: f64,
     pub front: bool
 }
 
@@ -14,7 +14,7 @@ impl HitRecord {
         HitRecord {
             p: Vec3(0., 0., 0.),
             n: Vec3(0., 0., 0.),
-            t: f32::INFINITY,
+            t: f64::INFINITY,
             front: true
         }
     }

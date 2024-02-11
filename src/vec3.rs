@@ -1,11 +1,39 @@
-pub struct Vec3(pub f32, pub f32, pub f32);
+use crate::random::{random, random_in};
+
+pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
-    pub fn l2norm(self) -> f32 { // L2 norm
+    pub fn random() -> Vec3 {
+        Vec3(random(), random(), random())
+    }
+
+    pub fn random_in(min: f64, max: f64) -> Vec3 {
+        Vec3(random_in(min, max), random_in(min, max), random_in(min, max))
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            let v: Vec3 = Self::random_in(-1., 1.);
+            if (v.l2norm() < 1.) {
+                return v;
+            }
+        }
+    }
+
+    pub fn random_unit() -> Vec3 {
+        Self::random_in_unit_sphere().unit()
+    }
+
+    pub fn random_unit_hemisphere(n: Vec3) -> Vec3 {
+        let v: Vec3 = Self::random_unit();
+        (if (v*n > 0.) {1.} else {-1.})*v
+    }
+
+    pub fn l2norm(self) -> f64 { // L2 norm
         self.0*self.0 + self.1*self.1 + self.2*self.2
     }
 
-    pub fn len(self) -> f32 { // Euclidean distance
+    pub fn len(self) -> f64 { // Euclidean distance
         self.l2norm().sqrt()
     }
 
@@ -80,7 +108,7 @@ impl std::ops::AddAssign for Vec3 { // v1 += v2;
     }
 }
 
-impl std::ops::Add<Vec3> for f32 { // Coordinate-wise scalar sum;
+impl std::ops::Add<Vec3> for f64 { // Coordinate-wise scalar sum;
     type Output = Vec3;
     fn add(self, rhs: Vec3) -> Self::Output {
         Vec3 (
@@ -102,7 +130,7 @@ impl std::ops::Sub for Vec3 { // v1 - v2;
     }
 }
 
-impl std::ops::Mul<Vec3> for f32 { // k*v;
+impl std::ops::Mul<Vec3> for f64 { // k*v;
     type Output = Vec3;
     fn mul(self, rhs: Vec3) -> Self::Output {
         Vec3 (
@@ -114,15 +142,15 @@ impl std::ops::Mul<Vec3> for f32 { // k*v;
 }
 
 impl std::ops::Mul for Vec3 { // Dot product
-    type Output = f32;
+    type Output = f64;
     fn mul(self, rhs: Vec3) -> Self::Output {
         self.0*rhs.0 + self.1*rhs.1 + self.2*rhs.2
     }
 }
 
-impl std::ops::Div<f32> for Vec3 { // v/k;
+impl std::ops::Div<f64> for Vec3 { // v/k;
     type Output = Vec3;
-    fn div(self, rhs: f32) -> Self::Output {
+    fn div(self, rhs: f64) -> Self::Output {
         (1./rhs)*self
     }
 }
