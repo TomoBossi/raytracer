@@ -54,8 +54,8 @@ fn main() {
 }
 
 fn ray_color<T: Hittable>(r: Ray, rec: &mut HitRecord, surfaces: &[T]) -> Vec3 {
-    let mut surface_hit: bool = false;
     let mut nearest_hit_rec: HitRecord = HitRecord::new_empty();
+    let mut surface_hit: bool = false;
     for surf in surfaces.iter() {
         if (surf.hit(r, 0., 50., rec)) {
             if (!surface_hit || rec.t < nearest_hit_rec.t) {
