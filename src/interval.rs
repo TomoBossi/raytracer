@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Interval {
     pub min: f64,
     pub max: f64
@@ -22,17 +23,6 @@ impl Interval {
         }
     }
 }
-
-impl std::clone::Clone for Interval { // interval.clone();
-    fn clone(&self) -> Self {
-        Interval {
-            min: self.min.clone(),
-            max: self.max.clone()
-        }
-    }
-}
-
-impl std::marker::Copy for Interval {}
 
 pub const EMPTY: Interval = Interval{min: f64::INFINITY, max: -f64::INFINITY};
 pub const UNIVERSE: Interval = Interval{min: -f64::INFINITY, max: f64::INFINITY};

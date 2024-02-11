@@ -2,10 +2,12 @@ use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::surface::{HitRecord, Hittable};
 use crate::interval::Interval;
+use crate::materials::Materials;
 
 pub struct Sphere {
     pub center: Vec3,
-    pub radius: f64
+    pub radius: f64,
+    pub mat: Materials
 }
 
 impl Hittable for Sphere {
@@ -32,6 +34,7 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal: Vec3 = (rec.p - self.center)/self.radius;
         rec.set_face_normal(r, outward_normal);
+        rec.mat = self.mat;
         true
     }
 }

@@ -4,6 +4,7 @@ use crate::color::write_color;
 use crate::surface::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::world::World;
+use crate::materials::{Materials, Scatter};
 
 pub struct Camera {
     max_d: u8,                                                                  // Max depth (n° of jumps)
@@ -94,8 +95,8 @@ impl Camera {
 
         let mut rec: HitRecord = HitRecord::new_empty();
         if (world.hit(r, Interval{min: 0.000001, max: f64::INFINITY}, &mut rec)) {
-            let dir: Vec3 = rec.n + Vec3::random_unit();
-            0.5*Self::ray_color(Ray {ori: rec.p, dir: dir}, depth-1, world)
+            let (r_out, color): (Ray, Vec3) = rec.mat.scatter(r, &rec); 
+            color.coord_mul(Self::ray_color(r_out, depth-1, world))
         } else {
             let unit_dir: Vec3 = r.dir.unit();
             let a: f64 = 0.5*(unit_dir.1 + 1.0);

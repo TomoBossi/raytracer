@@ -11,7 +11,7 @@ pub enum Surfaces {
 impl Hittable for Surfaces {
     fn hit(&self, r: Ray, t_range: Interval, rec: &mut HitRecord) -> bool {
         match self {
-            Surfaces::Sphere(sphere) => sphere.hit(r, t_range, rec)
+            Surfaces::Sphere(s) => s.hit(r, t_range, rec)
         }
     }
 }

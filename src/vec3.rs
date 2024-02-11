@@ -1,17 +1,18 @@
 use crate::random::{random, random_in};
 
+#[derive(Clone, Copy)]
 pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
-    pub fn random() -> Vec3 {
+    pub fn random() -> Vec3 { // Random vector with all coordinates between 1 and -1 
         Vec3(random(), random(), random())
     }
 
-    pub fn random_in(min: f64, max: f64) -> Vec3 {
+    pub fn random_in(min: f64, max: f64) -> Vec3 { // Random vector with all coordinates in the range defined by min and max
         Vec3(random_in(min, max), random_in(min, max), random_in(min, max))
     }
 
-    pub fn random_in_unit_sphere() -> Vec3 {
+    pub fn random_in_unit_sphere() -> Vec3 { // Random vector inside the unit sphere
         loop {
             let v: Vec3 = Self::random_in(-1., 1.);
             if (v.l2norm() < 1.) {
@@ -20,13 +21,17 @@ impl Vec3 {
         }
     }
 
-    pub fn random_unit() -> Vec3 {
+    pub fn random_unit() -> Vec3 { // Random unit vector
         Self::random_in_unit_sphere().unit()
     }
 
-    pub fn random_unit_hemisphere(n: Vec3) -> Vec3 {
+    pub fn random_unit_hemisphere(n: Vec3) -> Vec3 { // Random unit vector facing the hemisphere of the unit sphere derived from the surface normal
         let v: Vec3 = Self::random_unit();
         (if (v*n > 0.) {1.} else {-1.})*v
+    }
+
+    pub fn reflect(self, n: Vec3) -> Vec3 { // Reflect self based on surface normal
+        self - (2.*self*n)*n
     }
 
     pub fn l2norm(self) -> f64 { // L2 norm
@@ -56,6 +61,11 @@ impl Vec3 {
     pub fn unit(self) -> Vec3 { // Normalize
         self/self.len()
     }
+
+    pub fn near_zero(self) -> bool {
+        let atol: f64 = 1e-8;
+        (self.0.abs() < atol) && (self.1.abs() < atol) && (self.2.abs() < atol)
+    }
 }
 
 impl std::fmt::Display for Vec3 { // println!("{}", v);
@@ -63,18 +73,6 @@ impl std::fmt::Display for Vec3 { // println!("{}", v);
         write!(f, "{} {} {}", self.0, self.1, self.2)
     }
 }
-
-impl std::clone::Clone for Vec3 { // v.clone();
-    fn clone(&self) -> Self {
-        Vec3 (
-            self.0.clone(),
-            self.1.clone(),
-            self.2.clone()
-        )
-    }
-}
-
-impl std::marker::Copy for Vec3 {}
 
 impl std::ops::Neg for Vec3 { // -v;
     type Output = Self;
