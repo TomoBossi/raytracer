@@ -20,3 +20,15 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, r: Ray, r_tmin: f32, r_tmax: f32, rec: &mut HitRecord) -> bool;
 }
+
+impl std::clone::Clone for HitRecord { // rec.clone();
+    fn clone(&self) -> Self {
+        HitRecord {
+            p: self.p.clone(),
+            n: self.n.clone(),
+            t: self.t.clone()
+        }
+    }
+}
+
+impl std::marker::Copy for HitRecord {}

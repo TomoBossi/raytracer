@@ -36,8 +36,9 @@ fn main() {
 
     let mut rec: HitRecord = HitRecord::new_empty();
     let surfaces = [
+        Sphere{center: Vec3(0.12, 0., -0.37), radius: 0.1},
         Sphere{center: Vec3(0., 0., -0.8), radius: 0.5},
-        Sphere{center: Vec3(0.5, 0., -1.), radius: 0.5},
+        Sphere{center: Vec3(0.1, 0., -0.475), radius: 0.2},
     ];
 
     println!("P3\n{} {}\n255", w, h);
@@ -53,14 +54,23 @@ fn main() {
 }
 
 fn ray_color<T: Hittable>(r: Ray, rec: &mut HitRecord, surfaces: &[T]) -> Vec3 {
+    let mut surface_hit: bool = false;
+    let mut nearest_hit_rec: HitRecord = HitRecord::new_empty();
     for surf in surfaces.iter() {
         if (surf.hit(r, 0., 50., rec)) {
-            return (1. + rec.n)/2.;
+            if (!surface_hit || rec.t < nearest_hit_rec.t) {
+                surface_hit = true;
+                nearest_hit_rec = *rec;
+            }
         }
     }
-    let unit_dir: Vec3 = r.dir.unit();
-    let a: f32 = 0.5*(unit_dir.1 + 1.0);
-    (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
+    if (surface_hit) {
+        (1. + nearest_hit_rec.n)/2.
+    } else {
+        let unit_dir: Vec3 = r.dir.unit();
+        let a: f32 = 0.5*(unit_dir.1 + 1.0);
+        (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
+    }
 }
 
 fn output_an_image(w: u16, h: u16) {
