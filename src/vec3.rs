@@ -70,6 +70,16 @@ impl std::ops::Add for Vec3 { // v1 + v2;
     }
 }
 
+impl std::ops::AddAssign for Vec3 { // v1 += v2;
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Vec3 (
+            self.0 + rhs.0,
+            self.1 + rhs.1,
+            self.2 + rhs.2
+        );
+    }
+}
+
 impl std::ops::Add<Vec3> for f32 { // Coordinate-wise scalar sum;
     type Output = Vec3;
     fn add(self, rhs: Vec3) -> Self::Output {

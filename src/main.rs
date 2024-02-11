@@ -30,6 +30,6 @@ fn main() {
         Surfaces::Sphere(Sphere{center: Vec3(0.1, 0., -0.475), radius: 0.2})
     ]};
 
-    let camera: Camera = Camera::new(16.0/9.0, 1.0, 400);
+    let camera: Camera = Camera::new(16.0/9.0, 1.0, 400, 100);
     camera.render(world);
 }
