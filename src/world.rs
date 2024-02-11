@@ -2,7 +2,7 @@ use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::surface::{HitRecord, Hittable};
 use crate::sphere::Sphere;
-use crate::interval::{Interval, UNIVERSE, EMPTY};
+use crate::interval::Interval;
 
 pub enum Surfaces {
     Sphere(Sphere)
