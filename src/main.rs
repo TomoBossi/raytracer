@@ -7,23 +7,18 @@ pub mod ray;
 pub mod color;
 pub mod surface;
 pub mod sphere;
+pub mod interval;
+pub mod world;
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::color::write_color;
 use crate::surface::{HitRecord, Hittable};
 use crate::sphere::Sphere;
+use crate::interval::Interval;
+use crate::world::{World, Surfaces};
 
-enum Surfaces {
-    Sphere(Sphere)
-}
-impl Hittable for Surfaces {
-    fn hit(&self, r: Ray, r_tmin: f32, r_tmax: f32, rec: &mut HitRecord) -> bool {
-        match self {
-            Surfaces::Sphere(sphere) => sphere.hit(r, r_tmin, r_tmax, rec)
-        }
-    }
-}
+use std::f32::consts::PI;
 
 fn main() {
     let aspect_ratio: f32 = 16.0/9.0;                                           // Aspect ratio
@@ -45,12 +40,12 @@ fn main() {
     let mut ray_dir: Vec3;
     let mut r: Ray;
 
-    let mut rec: HitRecord = HitRecord::new_empty();
-    let mut surfaces: Vec<Surfaces> = vec![
+    let mut world: World = World{surfaces: vec![
         Surfaces::Sphere(Sphere{center: Vec3(0.12, 0., -0.37), radius: 0.1}),
         Surfaces::Sphere(Sphere{center: Vec3(0., 0., -0.8), radius: 0.5}),
+        Surfaces::Sphere(Sphere{center: Vec3(0., -100.5, -1.), radius: 100.}),
         Surfaces::Sphere(Sphere{center: Vec3(0.1, 0., -0.475), radius: 0.2})
-    ];
+    ]};
 
     println!("P3\n{} {}\n255", w, h);
     for j in 0..h {
@@ -58,39 +53,19 @@ fn main() {
             px_center = px00_loc + (i as f32)*du + (j as f32)*dv;
             ray_dir = px_center - cam_center;
             r = Ray{ori: cam_center, dir: ray_dir};
-            px_color = ray_color(r, &mut rec, &surfaces);
+            px_color = ray_color(r, &world);
             write_color(px_color);
         }
     }
 }
 
-fn ray_color(r: Ray, rec: &mut HitRecord, surfaces: &Vec<Surfaces>) -> Vec3 {
-    let mut nearest_hit_rec: HitRecord = HitRecord::new_empty();
-    let mut surface_hit: bool = false;
-    for surf in surfaces.iter() {
-        if (surf.hit(r, 0., 50., rec)) {
-            if (!surface_hit || rec.t < nearest_hit_rec.t) {
-                surface_hit = true;
-                nearest_hit_rec = *rec;
-            }
-        }
-    }
-    if (surface_hit) {
-        (1. + nearest_hit_rec.n)/2.
+fn ray_color(r: Ray, world: &World) -> Vec3 {
+    let mut rec: HitRecord = HitRecord::new_empty();
+    if (world.hit(r, Interval{min: 0., max: f32::INFINITY}, &mut rec)) {
+        (1. + rec.n)/2.
     } else {
         let unit_dir: Vec3 = r.dir.unit();
         let a: f32 = 0.5*(unit_dir.1 + 1.0);
         (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
-    }
-}
-
-fn output_an_image(w: u16, h: u16) {
-    let mut rgb: Vec3;
-    println!("P3\n{} {}\n255", w, h);
-    for j in 0..h {
-        for i in 0..w {
-            rgb = Vec3(i as f32/(w-1) as f32, j as f32/(h-1) as f32, 0.5);
-            write_color(rgb);
-        }
     }
 }

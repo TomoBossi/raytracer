@@ -38,7 +38,7 @@ impl std::fmt::Display for Vec3 { // println!("{}", v);
 
 impl std::clone::Clone for Vec3 { // v.clone();
     fn clone(&self) -> Self {
-        Vec3(
+        Vec3 (
             self.0.clone(),
             self.1.clone(),
             self.2.clone()

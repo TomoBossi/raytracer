@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
+use crate::interval::Interval;
 
 pub struct HitRecord {
     pub p: Vec3,
@@ -13,7 +14,7 @@ impl HitRecord {
         HitRecord {
             p: Vec3(0., 0., 0.),
             n: Vec3(0., 0., 0.),
-            t: 0.,
+            t: f32::INFINITY,
             front: true
         }
     }
@@ -25,7 +26,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: Ray, r_tmin: f32, r_tmax: f32, rec: &mut HitRecord) -> bool;
+    fn hit(&self, r: Ray, t_range: Interval, rec: &mut HitRecord) -> bool;
 }
 
 impl std::clone::Clone for HitRecord { // rec.clone();
