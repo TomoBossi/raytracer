@@ -22,7 +22,7 @@ impl HitRecord {
             p: Vec3(0., 0., 0.),
             n: Vec3(0., 0., 0.),
             t: f64::INFINITY,
-            front: true,
+            front: false,
             mat: Materials::Lambertian(Lambertian {
                 color: Vec3(0., 0., 0.)
             })

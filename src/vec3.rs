@@ -21,6 +21,14 @@ impl Vec3 {
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3 { // Random vector on the unit circle
+        loop {
+            let v: Vec3 = Vec3(random_in(-1., 1.), random_in(-1., 1.), 0.);
+            if (v.l2norm() < 1.) {
+                return v;
+        }
+    }
+
     pub fn random_unit() -> Vec3 { // Random unit vector
         Self::random_in_unit_sphere().unit()
     }
@@ -32,6 +40,13 @@ impl Vec3 {
 
     pub fn reflect(self, n: Vec3) -> Vec3 { // Reflect self based on surface normal
         self - (2.*self*n)*n
+    }
+
+    pub fn refract(self, n: Vec3, idx_ratio: f64) -> Vec3 { // Refract self based on surface normal and refraction index ratio (eta over eta prime)
+        let cos_theta: f64 = f64::min(-self*n, 1.);
+        let r_out_perpendicular: Vec3 = idx_ratio*(self + cos_theta*n);
+        let r_out_parallel: Vec3 = -((1. - r_out_perpendicular.l2norm()).abs().sqrt())*n;
+        r_out_perpendicular + r_out_parallel
     }
 
     pub fn l2norm(self) -> f64 { // L2 norm

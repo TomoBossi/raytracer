@@ -22,9 +22,9 @@ impl Hittable for Sphere {
         }
 
         let sqrt_d: f64 = discriminant.sqrt();
-        let root: f64 = (-half_b - sqrt_d)/a;                                   // Value of t for the nearest sphere hit 
+        let mut root: f64 = (-half_b - sqrt_d)/a;                                   // Value of t for the nearest sphere hit 
         if (!t_range.surrounds(root)) {
-            let root = (-half_b + sqrt_d)/a;
+            root = (-half_b + sqrt_d)/a;
             if (!t_range.surrounds(root)) {
                 return false;
             }
