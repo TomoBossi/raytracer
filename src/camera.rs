@@ -3,13 +3,14 @@ use std::io::{stdout, BufWriter, Write};
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
-use crate::color::write_color;
+use crate::color::write_png;
 use crate::surface::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::world::World;
 use crate::materials::{Materials, Scatter};
 
 pub struct Camera {
+    output_file: String,
     look_at: Vec3,   // Point the camera is looking at
     look_from: Vec3, // Point where the camera is
     up_dir: Vec3,    // Camera's relative up direction
@@ -18,8 +19,8 @@ pub struct Camera {
     max_d: u8,       // Max depth (n° of jumps)
     vfov: f64,       // Vertical FOV
     ar: f64,         // Aspect ratio
-    w: u16,          // Screen image_width
-    h: u16,          // Screen height
+    w: u32,          // Screen image_width
+    h: u32,          // Screen height
     vh: f64,         // Viewport image_width
     vw: f64,         // Viewport height
     vu: Vec3,        // Vu
@@ -39,13 +40,14 @@ pub struct Camera {
 
 impl Camera {
     pub fn new(
+        output_file: String,
         look_at: Vec3,
         look_from: Vec3,
         up_dir: Vec3,
         defocus_angle: f64,
         focus_distance: f64,
         aspect_ratio: f64, 
-        image_width: u16, 
+        image_width: u32, 
         max_depth: u8, 
         vertical_fov: f64,
         aa_factor: u8
@@ -54,7 +56,7 @@ impl Camera {
         let i: Vec3 = (up_dir.x(k)).unit();         // Camera coordinate frame unit basis vector u
         let j: Vec3 = k.x(i);                       // Camera coordinate frame unit basis vector v
 
-        let h: u16 = (image_width as f64/aspect_ratio) as u16;
+        let h: u32 = (image_width as f64/aspect_ratio) as u32;
         let theta: f64 = vertical_fov.to_radians();
         let vfov_h_ratio: f64 = (theta/2.).tan();
         let vh: f64 = 2.*vfov_h_ratio*focus_distance;
@@ -75,6 +77,7 @@ impl Camera {
         let dvdd: Vec3 = defocus_radius*j;
 
         Camera {
+            output_file: output_file,
             look_at: look_at,
             look_from: look_from,
             up_dir: up_dir,
@@ -104,23 +107,22 @@ impl Camera {
     }
 
     pub fn render(&self, world: World) {
-        let pixels_total: u32 = (self.w as u32*self.h as u32);
+        let mut img_matrix: Vec<Vec<Vec3>> = vec![];
+        let pixels_total: u32 = self.w*self.h;
         let mut pixels_done: u32 = 0;
-        let file: File = File::create("./output.ppm").expect("Creation failed");
-        let mut writer = BufWriter::new(&file);
-        writeln!(&mut writer, "P3\n{} {}\n255", self.w, self.h);
         for j in 0..self.h {
+            img_matrix.push(vec![]);
             for i in 0..self.w {
-                write_color(&mut writer, self.get_px_color(&world, i, j));
-                
+                img_matrix[j as usize].push(self.get_px_color(&world, i, j));
                 pixels_done += 1;
                 print!("\r{:.2}%", 100.*pixels_done as f32/pixels_total as f32);
                 stdout().flush();
             }
         }
+        write_png(self.output_file.clone(), img_matrix);
     }
 
-    fn get_px_color(&self, world: &World, i: u16, j: u16) -> Vec3 {
+    fn get_px_color(&self, world: &World, i: u32, j: u32) -> Vec3 {
         let mut px_color: Vec3 = Vec3(0., 0., 0.);
         let start: Vec3 = self.s_corner + (i as f64)*self.du + (j as f64)*self.dv;
         for pi in 0..self.aa_sqrt {

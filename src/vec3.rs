@@ -1,9 +1,13 @@
 use crate::random::{random, random_in};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Vec3(pub f64, pub f64, pub f64);
 
 impl Vec3 {
+    pub fn unpack(self) -> (f64, f64, f64) {
+        (self.0, self.1, self.2)
+    }
+
     pub fn random() -> Vec3 { // Random vector with all coordinates between 1 and -1 
         Vec3(random(), random(), random())
     }
