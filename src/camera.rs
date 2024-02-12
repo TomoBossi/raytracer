@@ -96,7 +96,11 @@ impl Camera {
         let mut rec: HitRecord = HitRecord::new_empty();
         if (world.hit(r, Interval{min: 0.000001, max: f64::INFINITY}, &mut rec)) {
             let (r_out, color): (Ray, Vec3) = rec.mat.scatter(r, &rec); 
-            color.coord_mul(Self::ray_color(r_out, depth-1, world))
+            if (!color.near_zero()) {
+                color.coord_mul(Self::ray_color(r_out, depth-1, world))
+            } else {
+                Vec3(0., 0., 0.)
+            }
         } else {
             let unit_dir: Vec3 = r.dir.unit();
             let a: f64 = 0.5*(unit_dir.1 + 1.0);

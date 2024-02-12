@@ -29,8 +29,8 @@ fn main() {
     let grass: Materials = Materials::Lambertian(Lambertian {color: Vec3(0.2, 0.8, 0.3)});
     let blue: Materials = Materials::Lambertian(Lambertian {color: Vec3(0.2, 0.3, 1.0)});
     let red: Materials = Materials::Lambertian(Lambertian {color: Vec3(0.9, 0.2, 0.3)});
-    let metal: Materials = Materials::Metal(Metal {color: Vec3(0.8, 0.8, 0.8)});
-    let hue_metal: Materials = Materials::Metal(Metal {color: Vec3(0.8, 0.6, 0.2)});
+    let metal: Materials = Materials::Metal(Metal {color: Vec3(0.8, 0.8, 0.8), fuzz: 0.1});
+    let hue_metal: Materials = Materials::Metal(Metal {color: Vec3(0.8, 0.6, 0.2), fuzz: 0.});
 
     let mut world: World = World {surfaces: vec![
         Surfaces::Sphere(Sphere {center: Vec3(0., 0., -1.), radius: 0.5, mat: blue}),
@@ -41,6 +41,6 @@ fn main() {
         Surfaces::Sphere(Sphere {center: Vec3(-0.1, -0.4, -0.56), radius: 0.05, mat: metal}),
     ]};
 
-    let camera: Camera = Camera::new(16.0/9.0, 200, 10, 1.0, 16);
+    let camera: Camera = Camera::new(16.0/9.0, 200, 10, 1.0, 32);
     camera.render(world);
 }

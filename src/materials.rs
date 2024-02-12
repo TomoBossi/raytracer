@@ -19,23 +19,25 @@ pub struct Lambertian {
 
 #[derive(Clone, Copy)]
 pub struct Metal {
-    pub color: Vec3
+    pub color: Vec3,
+    pub fuzz: f64
 }
 
 impl Scatter for Lambertian {
     fn scatter(&self, r_in: Ray, rec: &HitRecord) -> (Ray, Vec3) {
-        let mut scatter_direction: Vec3 = rec.n + Vec3::random_unit();
-        if (scatter_direction.near_zero()) {
-            scatter_direction = rec.n;
+        let mut scattered_dir: Vec3 = rec.n + Vec3::random_unit();
+        if (scattered_dir.near_zero()) {
+            scattered_dir = rec.n;
         }
-        (Ray {ori: rec.p, dir: scatter_direction}, self.color)
+        (Ray {ori: rec.p, dir: scattered_dir}, self.color)
     }
 }
 
 impl Scatter for Metal {
     fn scatter(&self, r_in: Ray, rec: &HitRecord) -> (Ray, Vec3) {              // Scattered ray, color, reflectance (attenuation)
-        let mut reflected_direction: Vec3 = r_in.dir.unit().reflect(rec.n);
-        (Ray {ori: rec.p, dir: reflected_direction}, self.color)
+        let reflected_dir: Vec3 = r_in.dir.unit().reflect(rec.n);
+        let scattered_dir: Vec3 = reflected_dir + self.fuzz*Vec3::random_unit();
+        (Ray {ori: rec.p, dir: scattered_dir}, self.color)
     }
 }
 
