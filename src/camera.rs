@@ -10,28 +10,31 @@ use crate::world::World;
 use crate::materials::{Materials, Scatter};
 
 pub struct Camera {
-    look_at: Vec3,                                                              // Point the camera is looking at
-    look_from: Vec3,                                                            // Point where the camera is
-    up_dir: Vec3,                                                               // Camera's relative up direction
-    max_d: u8,                                                                  // Max depth (n° of jumps)
-    vfov: f64,                                                                  // Vertical FOV
-    ar: f64,                                                                    // Aspect ratio
-    f: f64,                                                                     // Focal length
-    w: u16,                                                                     // Screen image_width
-    h: u16,                                                                     // Screen height
-    vh: f64,                                                                    // Viewport image_width
-    vw: f64,                                                                    // Viewport height
-    vu: Vec3,                                                                   // V_u
-    vv: Vec3,                                                                   // V_v
-    du: Vec3,                                                                   // delta_u between pixels
-    dv: Vec3,                                                                   // delta_v between pixels
-    center: Vec3,                                                               // Camera center
-    v_corner: Vec3,                                                             // Viewport upper-left corner location
-    aa_sqrt: u8,                                                                // sqrt(Samples per pixel) for antialiasing
-    aa: u8,                                                                     // Samples per pixel for antialiasing
-    dus: Vec3,                                                                  // delta_u between samples
-    dvs: Vec3,                                                                  // delta_v between samples
-    s_corner: Vec3,                                                             // Position of the first top-left sample
+    look_at: Vec3,   // Point the camera is looking at
+    look_from: Vec3, // Point where the camera is
+    up_dir: Vec3,    // Camera's relative up direction
+    d_angle: f64,    // Variation angle of rays per pixels
+    focus_len: f64,  // Distance from camera of perfect focus plane
+    max_d: u8,       // Max depth (n° of jumps)
+    vfov: f64,       // Vertical FOV
+    ar: f64,         // Aspect ratio
+    w: u16,          // Screen image_width
+    h: u16,          // Screen height
+    vh: f64,         // Viewport image_width
+    vw: f64,         // Viewport height
+    vu: Vec3,        // Vu
+    vv: Vec3,        // Vv
+    du: Vec3,        // delta_u between pixels
+    dv: Vec3,        // delta_v between pixels
+    center: Vec3,    // Camera center
+    v_corner: Vec3,  // Viewport upper-left corner location
+    aa_sqrt: u8,     // sqrt(Samples per pixel) for antialiasing
+    aa: u8,          // Samples per pixel for antialiasing
+    dus: Vec3,       // delta_u between samples
+    dvs: Vec3,       // delta_v between samples
+    s_corner: Vec3,  // Position of the first top-left sample
+    dudd: Vec3,      // Defocus disk horizontal radius
+    dvdd: Vec3       // Defocus disk vertical radius
 }
 
 impl Camera {
@@ -39,42 +42,47 @@ impl Camera {
         look_at: Vec3,
         look_from: Vec3,
         up_dir: Vec3,
+        defocus_angle: f64,
+        focus_distance: f64,
         aspect_ratio: f64, 
         image_width: u16, 
         max_depth: u8, 
         vertical_fov: f64,
         aa_factor: u8
     ) -> Camera {
-        let k: Vec3 = (look_from - look_at).unit();                             // Camera coordinate frame unit basis vector w
-        let i: Vec3 = (up_dir.x(k)).unit();                                     // Camera coordinate frame unit basis vector u
-        let j: Vec3 = k.x(i);                                                   // Camera coordinate frame unit basis vector v
+        let k: Vec3 = (look_from - look_at).unit(); // Camera coordinate frame unit basis vector w
+        let i: Vec3 = (up_dir.x(k)).unit();         // Camera coordinate frame unit basis vector u
+        let j: Vec3 = k.x(i);                       // Camera coordinate frame unit basis vector v
 
-        let focal_length: f64 = (look_from - look_at).len();
         let h: u16 = (image_width as f64/aspect_ratio) as u16;
         let theta: f64 = vertical_fov.to_radians();
         let vfov_h_ratio: f64 = (theta/2.).tan();
-        let vh: f64 = 2.*vfov_h_ratio*focal_length;
+        let vh: f64 = 2.*vfov_h_ratio*focus_distance;
         let vw: f64 = vh*(image_width as f64/h as f64);        
         let vu: Vec3 = vw*i;
         let vv: Vec3 = -vh*j;
         let du: Vec3 = vu/(image_width as f64);
         let dv: Vec3 = vv/(h as f64);
         let center: Vec3 = look_from;
-        let v_corner: Vec3 = center - (focal_length*k) - vu/2. - vv/2.;
+        let v_corner: Vec3 = center - (focus_distance*k) - vu/2. - vv/2.;
         let aa_sqrt: u8 = (aa_factor as f64).sqrt() as u8;
         let aa: u8 = aa_sqrt*aa_sqrt;
         let dus: Vec3 = du/(aa_sqrt + 1) as f64;
         let dvs: Vec3 = dv/(aa_sqrt + 1) as f64;
         let s_corner: Vec3 = v_corner + dus + dvs;
-        
+        let defocus_radius: f64 = focus_distance*((defocus_angle/2.).to_radians()).tan();
+        let dudd: Vec3 = defocus_radius*i;
+        let dvdd: Vec3 = defocus_radius*j;
+
         Camera {
             look_at: look_at,
             look_from: look_from,
             up_dir: up_dir,
+            d_angle: defocus_angle,
+            focus_len: focus_distance,
             max_d: max_depth,
             vfov: theta,
             ar: aspect_ratio,
-            f: focal_length,
             w: image_width,
             h: h,
             vh: vh,
@@ -89,7 +97,9 @@ impl Camera {
             aa: aa,
             dus: dus,
             dvs: dvs,
-            s_corner: s_corner
+            s_corner: s_corner,
+            dudd: dudd,
+            dvdd: dvdd
         }
     }
 
@@ -116,7 +126,12 @@ impl Camera {
         for pi in 0..self.aa_sqrt {
             for pj in 0..self.aa_sqrt {
                 let pos: Vec3 = start + (pi as f64)*self.dus + (pj as f64)*self.dvs;
-                let r: Ray = Ray {ori: self.center, dir: pos - self.center};
+                let ray_ori: Vec3 = if (self.d_angle <= 0.) {
+                    self.center
+                } else {
+                    self.defocus_disk_sample()
+                };
+                let r: Ray = Ray {ori: ray_ori, dir: pos - ray_ori};
                 px_color += Self::ray_color(r, self.max_d, &world)/self.aa as f64;
             }
         }
@@ -141,5 +156,10 @@ impl Camera {
             let a: f64 = 0.5*(unit_dir.1 + 1.0);
             (1.0 - a)*Vec3(1.0, 1.0, 1.0) + a*Vec3(0.5, 0.7, 1.0)
         }
+    }
+
+    fn defocus_disk_sample(&self) -> Vec3 {
+        let v: Vec3 = Vec3::random_in_unit_disk();
+        self.center + v.0*self.dudd + v.1*self.dvdd
     }
 }

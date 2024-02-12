@@ -26,6 +26,7 @@ impl Vec3 {
             let v: Vec3 = Vec3(random_in(-1., 1.), random_in(-1., 1.), 0.);
             if (v.l2norm() < 1.) {
                 return v;
+            }
         }
     }
 
